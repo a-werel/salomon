@@ -30,7 +30,7 @@ COPY main.py /home/demo/app/main.py
 COPY export_pdg.sc /home/demo/app/export_pdg.sc
 
 RUN python3 -m venv .venv \
-    && .venv/bin/python -m pip install --no-cache-dir questionary
+    && .venv/bin/python -m pip install --no-cache-dir questionary graphviz
 
 ENV PATH="/home/demo/.venv/bin:${PATH}"
 
