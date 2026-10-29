@@ -55,7 +55,15 @@ def test_padding_does_not_change_the_function_representation(checkpoint):
     torch.testing.assert_close(alone, batched)
 
 
-@pytest.mark.parametrize("field,value", [("representation", "different-ast"), ("trained", None)])
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("representation", "different-ast"),
+        ("trained", None),
+        ("max_length", 0),
+        ("architecture", {"embedding_dim": 32, "hidden_dim": 0}),
+    ],
+)
 def test_incompatible_checkpoint_is_rejected(checkpoint, field, value):
     payload = torch.load(checkpoint, weights_only=True)
     payload[field] = value

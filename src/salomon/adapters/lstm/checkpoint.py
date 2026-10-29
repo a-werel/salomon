@@ -10,7 +10,7 @@ PAD = "<PAD>"
 UNK = "<UNK>"
 REPRESENTATION = "joern-ast-preorder-v1"
 CLASSES = ["safe", "vulnerable"]
-DEMO_TOKENS = [
+DEMO_TOKENS = [  # TODO: replace with real tokens from training set
     "END",
     "METHOD",
     "METHOD_PARAMETER_IN",
@@ -59,7 +59,7 @@ DEMO_TOKENS = [
 ]
 
 
-def create_demo_checkpoint(path: Path, seed: int = 42) -> None:
+def create_demo_checkpoint(path: Path, seed: int = 42) -> None:  # TODO: delete this function after training model
     """Create reproducible random weights, never labelled as a trained detector."""
     vocab = {token: index for index, token in enumerate([PAD, UNK, *sorted(set(DEMO_TOKENS))])}
     architecture = {"embedding_dim": 32, "hidden_dim": 64}
@@ -84,31 +84,54 @@ def create_demo_checkpoint(path: Path, seed: int = 42) -> None:
 
 
 def load_checkpoint(path: Path) -> tuple[AstLSTM, dict]:
+    """Read the checkpoint, validate its contents and build the model."""
+    checkpoint = _read_checkpoint(path)
+    _validate_metadata(checkpoint)
+    _validate_vocabulary(checkpoint.get("vocab"))
+    _validate_max_length(checkpoint.get("max_length"))
+    _validate_architecture(checkpoint.get("architecture"))
+    model = _build_model_from_checkpoint(checkpoint)
+    return model, checkpoint
+
+
+def _read_checkpoint(path: Path) -> dict:
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
     if not isinstance(checkpoint, dict):
         raise TypeError("Expected a checkpoint dictionary.")
+    return checkpoint
+
+
+def _validate_metadata(checkpoint: dict) -> None:
     if checkpoint.get("format_version") != 1 or checkpoint.get("representation") != REPRESENTATION:
         raise ValueError("Unsupported checkpoint format or AST representation.")
     if checkpoint.get("classes") != CLASSES or type(checkpoint.get("trained")) is not bool:
         raise ValueError("Checkpoint must declare classes and a boolean trained flag.")
-    vocab = checkpoint.get("vocab")
-    if (
-        not isinstance(vocab, dict)
-        or any(not isinstance(token, str) or type(index) is not int for token, index in vocab.items())
-        or vocab.get(PAD) != 0
-        or vocab.get(UNK) != 1
-        or sorted(vocab.values()) != list(range(len(vocab)))
-    ):
-        raise ValueError("Checkpoint vocabulary must use contiguous IDs with PAD=0 and UNK=1.")
-    if type(checkpoint.get("max_length")) is not int or checkpoint["max_length"] < 1:
+
+
+def _validate_vocabulary(vocab: dict[str, int]) -> None:
+    message = "Checkpoint vocabulary must use contiguous IDs with PAD=0 and UNK=1."
+    if not isinstance(vocab, dict) or vocab.get(PAD) != 0 or vocab.get(UNK) != 1:
+        raise ValueError(message)
+    if any(not isinstance(token, str) or type(index) is not int for token, index in vocab.items()):
+        raise ValueError(message)
+    if sorted(vocab.values()) != list(range(len(vocab))):
+        raise ValueError(message)
+
+
+def _validate_max_length(max_length: int) -> None:
+    if type(max_length) is not int or max_length < 1:
         raise ValueError("Checkpoint max_length must be a positive integer.")
-    architecture = checkpoint.get("architecture")
-    if (
-        not isinstance(architecture, dict)
-        or set(architecture) != {"embedding_dim", "hidden_dim"}
-        or any(type(value) is not int or value < 1 for value in architecture.values())
-    ):
-        raise ValueError("Checkpoint must specify positive embedding_dim and hidden_dim.")
-    model = AstLSTM(len(vocab), **architecture)
+
+
+def _validate_architecture(architecture: dict[str, int]) -> None:
+    message = "Checkpoint must specify positive embedding_dim and hidden_dim."
+    if not isinstance(architecture, dict) or set(architecture) != {"embedding_dim", "hidden_dim"}:
+        raise ValueError(message)
+    if any(type(value) is not int or value < 1 for value in architecture.values()):
+        raise ValueError(message)
+
+
+def _build_model_from_checkpoint(checkpoint: dict) -> AstLSTM:
+    model = AstLSTM(len(checkpoint["vocab"]), **checkpoint["architecture"])
     model.load_state_dict(checkpoint["state_dict"], strict=True)
-    return model.eval(), checkpoint
+    return model.eval()
