@@ -177,3 +177,6 @@ cython_debug/
 .pypirc
 
 demos/*/output
+
+# Local LSTM checkpoints; the Docker image generates its own demo checkpoint.
+models/lstm/

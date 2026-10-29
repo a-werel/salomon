@@ -1,4 +1,10 @@
-# KNSI GOLEM Template Repository
+# Salomon
+
+The Docker-backed AST/LSTM integration is documented in
+[docker/lstm/README.md](docker/lstm/README.md). Its bundled weights are random and
+explicitly marked untrained; a compatible trained checkpoint can be supplied later.
+
+## Repository template
 [![Flake8 Linting](https://github.com/Dnafivuq/golem_template/actions/workflows/lint.yml/badge.svg)](https://github.com/Dnafivuq/golem_template/actions/workflows/lint.yml)
 [![Pytest](https://github.com/Dnafivuq/golem_template/actions/workflows/test.yml/badge.svg)](https://github.com/Dnafivuq/golem_template/actions/workflows/test.yml)
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
