@@ -44,6 +44,15 @@ response. Function names are metadata, not model features. Unknown tokens and
 truncated functions are reported. This is a sequential LSTM, not a Tree-LSTM or
 the BGRU from SySeVR.
 
+In `joern-ast-preorder-vars-v2`, variable declarations receive function-local IDs
+such as `LOCAL:VAR_3` and `METHOD_PARAMETER_IN:VAR_1`. Identifier occurrences use
+the matching `IDENTIFIER:VAR_1`, resolved through Joern declaration references.
+IDs reset for each function; shadowed declarations receive different IDs. When
+Joern cannot resolve a declaration, identifiers are grouped by name within that
+function. Original variable names are not exported as model features.
+Rebuild the image and re-export ASTs after this change. Version-1 checkpoints are
+rejected because they were trained on a different representation.
+
 ## Replace the weights later
 
 Supply a compatible checkpoint without changing the adapter:
@@ -72,7 +81,7 @@ The checkpoint is a `torch.save` dictionary with:
 | Key | Required value |
 | --- | --- |
 | `format_version` | `1` |
-| `representation` | `"joern-ast-preorder-v1"` |
+| `representation` | `"joern-ast-preorder-vars-v2"` |
 | `trained` | `False` for random weights; `True` after actual training |
 | `classes` | `["safe", "vulnerable"]`, in this order |
 | `architecture` | `{"embedding_dim": 32, "hidden_dim": 64}` or the dimensions used in training |
@@ -84,6 +93,9 @@ Train the canonical `AstLSTM` on the same AST representation and save its weight
 with the vocabulary and metadata above. Arbitrary LSTM/SySeVR/VUDENC weights are
 not compatible. Marking a checkpoint trained changes output availability; it does
 not establish model accuracy or calibrate its scores.
+
+A separate training script and a runnable example are described in
+[scripts/README.md](../../scripts/README.md). Training is not part of the inference image.
 
 The image pins Joern to `v4.0.667` and PyTorch to `2.15.0`. Build arguments
 `JOERN_VERSION` and `TORCH_VERSION` allow explicit upgrades.

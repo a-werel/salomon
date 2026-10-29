@@ -8,7 +8,7 @@ from .model import AstLSTM
 
 PAD = "<PAD>"
 UNK = "<UNK>"
-REPRESENTATION = "joern-ast-preorder-v1"
+REPRESENTATION = "joern-ast-preorder-vars-v2"
 CLASSES = ["safe", "vulnerable"]
 DEMO_TOKENS = [  # TODO: replace with real tokens from training set
     "END",
@@ -18,6 +18,12 @@ DEMO_TOKENS = [  # TODO: replace with real tokens from training set
     "BLOCK",
     "IDENTIFIER",
     "LOCAL",
+    "METHOD_PARAMETER_IN:VAR_1",
+    "METHOD_PARAMETER_IN:VAR_2",
+    "LOCAL:VAR_3",
+    "IDENTIFIER:VAR_1",
+    "IDENTIFIER:VAR_2",
+    "IDENTIFIER:VAR_3",
     "RETURN",
     "FIELD_IDENTIFIER",
     "TYPE_REF",

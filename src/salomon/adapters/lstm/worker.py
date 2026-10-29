@@ -10,6 +10,7 @@ from pathlib import Path
 import torch
 
 from .checkpoint import CLASSES, REPRESENTATION, UNK, create_demo_checkpoint, load_checkpoint
+from .model import AstLSTM
 
 DEFAULT_CHECKPOINT = Path("/app/checkpoints/model.pt")
 
@@ -48,29 +49,50 @@ def predict_records(records: list[dict], checkpoint_path: Path) -> dict:
     predictions = []
     with torch.inference_mode():
         for record in records:
-            if not isinstance(record, dict):
-                raise TypeError("Each AST record must be an object.")
-            tokens = record.get("tokens")
-            if not isinstance(tokens, list) or not tokens or any(not isinstance(token, str) for token in tokens):
-                raise ValueError("Each function must have a nonempty list of string tokens.")
-            if not isinstance(record.get("source"), str) or not isinstance(record.get("function"), str):
-                raise TypeError("Each function must have source and function names.")
-            used = tokens[:limit]
-            ids = [vocab.get(token, vocab[UNK]) for token in used]
-            logits = model(torch.tensor([ids]), torch.tensor([len(ids)]))
-            scores = logits.softmax(dim=1)[0].tolist()
-            predictions.append(
-                {
-                    "source": record["source"],
-                    "function": record["function"],
-                    "prediction": CLASSES[max(range(len(scores)), key=scores.__getitem__)] if trained else None,
-                    "scores": dict(zip(CLASSES, scores, strict=True)),
-                    "token_count": len(tokens),
-                    "used_token_count": len(used),
-                    "unknown_token_count": sum(token not in vocab for token in used),
-                    "truncated": len(tokens) > limit,
-                }
-            )
+            _validate_record(record)
+            used, ids = _prepare_input(record["tokens"], vocab, limit)
+            scores = _predict_scores(model, ids)
+            predictions.append(_build_prediction(record, used, vocab, scores, trained))
+    return _build_response(predictions, trained)
+
+
+def _validate_record(record: dict) -> None:
+    if not isinstance(record, dict):
+        raise TypeError("Each AST record must be an object.")
+    tokens = record.get("tokens")
+    if not isinstance(tokens, list) or not tokens or any(not isinstance(token, str) for token in tokens):
+        raise ValueError("Each function must have a nonempty list of string tokens.")
+    if not isinstance(record.get("source"), str) or not isinstance(record.get("function"), str):
+        raise TypeError("Each function must have source and function names.")
+    if record.get("representation") != REPRESENTATION:
+        raise ValueError("AST representation is missing or outdated; export sequences again with the current image.")
+
+
+def _prepare_input(tokens: list[str], vocab: dict[str, int], limit: int) -> tuple[list[str], list[int]]:
+    used = tokens[:limit]
+    ids = [vocab.get(token, vocab[UNK]) for token in used]
+    return used, ids
+
+
+def _predict_scores(model: AstLSTM, ids: list[int]) -> list[float]:
+    logits = model(torch.tensor([ids]), torch.tensor([len(ids)]))
+    return logits.softmax(dim=1)[0].tolist()
+
+
+def _build_prediction(record: dict, used: list[str], vocab: dict[str, int], scores: list[float], trained: bool) -> dict:
+    return {
+        "source": record["source"],
+        "function": record["function"],
+        "prediction": CLASSES[max(range(len(scores)), key=scores.__getitem__)] if trained else None,
+        "scores": dict(zip(CLASSES, scores, strict=True)),
+        "token_count": len(record["tokens"]),
+        "used_token_count": len(used),
+        "unknown_token_count": sum(token not in vocab for token in used),
+        "truncated": len(record["tokens"]) > len(used),
+    }
+
+
+def _build_response(predictions: list[dict], trained: bool) -> dict:
     result = {
         "model_status": "trained" if trained else "untrained",
         "representation": REPRESENTATION,

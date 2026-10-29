@@ -180,3 +180,4 @@ demos/*/output
 
 # Local LSTM checkpoints; the Docker image generates its own demo checkpoint.
 models/lstm/
+data/processed/vulnllm-lstm*/

@@ -17,7 +17,14 @@ def checkpoint(tmp_path):
 def test_random_checkpoint_is_reproducible_and_never_returns_a_security_verdict(checkpoint, tmp_path):
     second = tmp_path / "second.pt"
     create_demo_checkpoint(second)
-    records = [{"source": "example.c", "function": "example", "tokens": ["METHOD", "END"]}]
+    records = [
+        {
+            "source": "example.c",
+            "function": "example",
+            "representation": "joern-ast-preorder-vars-v2",
+            "tokens": ["METHOD", "END"],
+        }
+    ]
     result = predict_records(records, checkpoint)
     assert result == predict_records(records, second)
     assert result["model_status"] == "untrained"
@@ -35,7 +42,15 @@ def test_external_checkpoint_controls_weights_vocabulary_and_sequence_limit(chec
     payload["state_dict"]["classifier.bias"] = torch.tensor([-5.0, 5.0])
     torch.save(payload, checkpoint)
     result = predict_records(
-        [{"source": "example.cpp", "function": "example", "tokens": ["METHOD", "unseen", "END"]}], checkpoint
+        [
+            {
+                "source": "example.cpp",
+                "function": "example",
+                "representation": "joern-ast-preorder-vars-v2",
+                "tokens": ["METHOD", "unseen", "END"],
+            }
+        ],
+        checkpoint,
     )
     prediction = result["predictions"][0]
     assert result["model_status"] == "trained"
@@ -59,6 +74,7 @@ def test_padding_does_not_change_the_function_representation(checkpoint):
     "field,value",
     [
         ("representation", "different-ast"),
+        ("representation", "joern-ast-preorder-v1"),
         ("trained", None),
         ("max_length", 0),
         ("architecture", {"embedding_dim": 32, "hidden_dim": 0}),
@@ -82,4 +98,7 @@ def test_invalid_vocabulary_is_rejected(checkpoint):
 
 def test_empty_ast_is_rejected(checkpoint):
     with pytest.raises(ValueError, match="nonempty"):
-        predict_records([{"source": "empty.c", "function": "empty", "tokens": []}], checkpoint)
+        predict_records(
+            [{"source": "empty.c", "function": "empty", "representation": "joern-ast-preorder-vars-v2", "tokens": []}],
+            checkpoint,
+        )

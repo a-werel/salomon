@@ -1,0 +1,8 @@
+[
+  {"source": "train.c", "function": "copy_unchecked", "label": 1, "split": "train", "group": "copy"},
+  {"source": "train.c", "function": "copy_checked", "label": 0, "split": "train", "group": "copy"},
+  {"source": "validation.c", "function": "read_unchecked", "label": 1, "split": "validation", "group": "index"},
+  {"source": "validation.c", "function": "read_checked", "label": 0, "split": "validation", "group": "index"},
+  {"source": "test.c", "function": "print_unchecked", "label": 1, "split": "test", "group": "format"},
+  {"source": "test.c", "function": "print_checked", "label": 0, "split": "test", "group": "format"}
+]
