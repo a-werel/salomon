@@ -1,0 +1,16 @@
+# Build context is the repository root; send only runtime sources to Docker.
+**
+!docker/
+!docker/vulcnn/
+!docker/vulcnn/Dockerfile
+!docker/vulcnn/requirements.txt
+!docker/vulcnn/cli.py
+!docker/vulcnn/functions.sc
+!third_party/
+!third_party/VulCNN/
+!third_party/VulCNN/**
+!third_party/joern/
+!third_party/joern/**
+**/.git
+**/__pycache__
+**/*.pyc

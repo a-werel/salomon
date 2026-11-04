@@ -1,0 +1,17 @@
+# Runtime for the pinned research implementation, separate from Salomon's Python 3.12 environment.
+# torch==2.2.2 is installed separately from the CPU wheel index in the Dockerfile.
+# The bundled sent2vec extension requires Cython 0.29 and NumPy's 1.x ABI.
+Cython==0.29.37
+numpy==1.26.4
+scipy==1.10.1
+pandas==1.5.3
+networkx==2.8.8
+pydot==1.4.2
+pyparsing==2.4.7
+scikit-learn==1.3.2
+lap==0.5.12
+prettytable==3.9.0
+tqdm==4.66.5
+# Newer transformers releases remove the AdamW import used by model.py.
+transformers==4.30.2
+nltk==3.8.1

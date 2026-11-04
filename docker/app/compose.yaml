@@ -1,0 +1,26 @@
+services:
+  app:
+    image: salomon:local
+
+    build:
+      context: ../..
+      dockerfile: docker/app/Dockerfile
+    
+    # Model dependencies and adapter settings belong to the app integration.
+    depends_on:
+      vulcnn:
+        condition: service_healthy
+        # ... and potentially more submodules
+    # environment variables
+    
+    environment:
+      # vulcnn container name and workspace path
+      VULCNN_CONTAINER: salomon-vulcnn
+      VULCNN_WORKSPACE: /workspace
+      VULCNN_MODELS: /models
+    
+    volumes:
+      - ../../outputs/vulcnn:/workspace
+      - ../../models:/models:ro
+      - ../../data:/data:ro
+      - /var/run/docker.sock:/var/run/docker.sock

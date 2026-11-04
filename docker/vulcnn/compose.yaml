@@ -1,0 +1,32 @@
+services:
+  vulcnn:
+
+    image: salomon-vulcnn:local
+    container_name: salomon-vulcnn
+
+    # Building stage context
+    build:
+      context: ../..
+      dockerfile: docker/vulcnn/Dockerfile
+    
+    # init means that the container will be started with the init process, and will be kept running even if the main process terminates.
+    # we need this because we have to listen for incoming commands from the app container.
+    init: true
+    # Keep the model runtime available for the app's docker exec stage calls.
+    entrypoint: ["sleep", "infinity"]
+
+    volumes:
+      - type: bind
+        source: ../../outputs/vulcnn
+        target: /workspace
+      - type: bind
+        source: ../../models
+        target: /models
+        read_only: true
+        
+    # Here is how to define a procedure for checkinng container health
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib, sent2vec, torch; assert pathlib.Path('/opt/joern/joern-cli/joern-parse').is_file()"]
+      interval: 10s
+      timeout: 10s
+      retries: 6

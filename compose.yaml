@@ -1,0 +1,5 @@
+# Project composition only. Each component owns its build and runtime settings.
+# Requires Docker Compose 2.20.3 or newer for include support.
+include:
+  - docker/app/compose.yaml
+  - docker/vulcnn/compose.yaml
