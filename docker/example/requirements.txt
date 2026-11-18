@@ -1,0 +1,2 @@
+# Add the model runtime dependencies here. Keep this environment separate from
+# Salomon's Python 3.12 environment.

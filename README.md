@@ -1,4 +1,10 @@
 # KNSI GOLEM Template Repository
+
+The root `compose.yaml` includes component-owned Compose files from `docker/`.
+See [the Docker structure guide](docs/docker.md) for building the project and
+adding model components. For VulCNN setup, PDG generation, and Python invocation,
+see [the VulCNN runtime guide](docs/vulcnn.md).
+
 [![Flake8 Linting](https://github.com/Dnafivuq/golem_template/actions/workflows/lint.yml/badge.svg)](https://github.com/Dnafivuq/golem_template/actions/workflows/lint.yml)
 [![Pytest](https://github.com/Dnafivuq/golem_template/actions/workflows/test.yml/badge.svg)](https://github.com/Dnafivuq/golem_template/actions/workflows/test.yml)
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
@@ -19,9 +25,15 @@ To ensure a transparent and easily understandable file structure for external us
 
 
 **How to run code in repository?**
+Install the package into your active Python 3.12+ environment, then run it as a module:
+
 ```bash
-python3 -m src.dataset
+python3 -m pip install -e .
+python3 -m salomon.main --help
 ```
+
+See [the VulCNN runtime guide](docs/vulcnn.md#run-the-python-demo-on-the-host)
+for running `demos/vulcnn_adapter/demo.py`.
 ### Readme
 Another goal of this repository is to provide a [template README](/TEMPLATE_README.md) that can be easily edited and adapted. The README serves as a foundation to help users create their own well-structured documentation, ensuring consistency across all projects within our repository.
 

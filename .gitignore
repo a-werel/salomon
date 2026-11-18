@@ -177,3 +177,8 @@ cython_debug/
 .pypirc
 
 demos/*/output
+# Downloaded Joern distribution and generated VulCNN outputs/model assets.
+/third_party/joern/
+/third_party/
+/outputs/
+/models/vulcnn/

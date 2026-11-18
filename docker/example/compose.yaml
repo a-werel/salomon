@@ -1,0 +1,26 @@
+services:
+  example:
+    image: salomon-example:local
+    container_name: salomon-example
+
+    build:
+      context: ../..
+      dockerfile: docker/example/Dockerfile
+
+    init: true
+    entrypoint: [ "sleep", "infinity" ]
+
+    volumes:
+      - type: bind
+        source: ../../outputs/example
+        target: /workspace
+      - type: bind
+        source: ../../models/example
+        target: /models
+        read_only: true
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import pathlib; assert pathlib.Path('/opt/example').is_dir()" ]
+      interval: 10s
+      timeout: 10s
+      retries: 6
