@@ -103,7 +103,24 @@ def run_docker_command(args) -> dict:
     # Try to run the command.
     # Run the command and capture the output.
 
-    completed = subprocess.run(command, check=True, capture_output=True, text=True, timeout=args.timeout + 10)
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=args.timeout + 10,
+        )
+    except subprocess.TimeoutExpired:
+        if not args.container:
+            subprocess.run(
+                ["docker", "rm", "--force", job_name],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        raise
+
     if completed.stderr:
         print(completed.stderr, file=sys.stderr, end="")
     return json.loads(completed.stdout)
@@ -171,8 +188,14 @@ def parse_source(run: Path) -> dict:
 def export_pdgs(run: Path) -> dict:
     original = read_json(run / "functions.json")
     normalized = describe_functions(run / "cpg.bin", run / "pdgs", export=True)
+    if len(original) != len(normalized) or any(
+        before.get("line") != after.get("line")
+        for before, after in zip(original, normalized)
+    ):
+        raise ValueError("Unable to safely map normalized functions to original source functions.")
+
     functions = []
-    for before, after in zip(original, normalized, strict=True):
+    for before, after in zip(original, normalized):
         canonicalize_pdg(Path(after["pdg"]))
         functions.append({**before, "normalized_name": after["name"], "pdg": after["pdg"]})
     manifest = {"schema_version": 1, "filename": read_json(run / "source.json")["filename"], "functions": functions}
@@ -247,18 +270,19 @@ def classify_functions(run: Path, nn_model: Path, max_length: int) -> dict:
             # Features in this context are the image representations of the functions.
             
             channels = np.load(function["features"], allow_pickle=False)
-            tensor = np.zeros((3, max_length, manifest["embedding_dim"]), dtype=np.float32)
+            padded_feature_tensor = np.zeros((3, max_length, manifest["embedding_dim"]), dtype=np.float32)
             # Pad the channels to the max_length.
             length = min(channels.shape[1], max_length)
-            tensor[:, :length, :] = channels[:, :length, :]
+            padded_feature_tensor[:, :length, :] = channels[:, :length, :]
 
-            logits, _ = model(torch.from_numpy(tensor).unsqueeze(0))
+            logits, _ = model(torch.from_numpy(padded_feature_tensor).unsqueeze(0))
             label = int(logits.argmax(dim=1).item())
             score = float(logits.softmax(dim=1)[0, 1].item())
 
-            predictions.append((tensor, label))
+            predictions.append((padded_feature_tensor, label))
             rows.append({**function, "label": label, "vulnerable_score": score})
 
+    # Save the model's predictions
     with (run / "predictions.pkl").open("wb") as stream:
         pickle.dump(predictions, stream)
 
@@ -277,7 +301,7 @@ def classify_functions(run: Path, nn_model: Path, max_length: int) -> dict:
         "",
         "Vulnerable functions:",
     ]
-
+    
     lines.extend(f"- {row['name']} (line {row['line']}; {row['full_name']})" for row in vulnerable)
     
     if not vulnerable:
