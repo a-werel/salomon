@@ -45,8 +45,9 @@ RUN cd /opt/VulCNN/sent2vec \
 # Joern/Ammonite needs a writable Java home when Docker runs with the host UID.
 # Set the environment variable for Java.
 ENV HOME=/tmp JAVA_TOOL_OPTIONS="-Duser.home=/tmp"
-# Copy the cli.py and functions.sc files to the container.
-COPY docker/vulcnn/cli.py docker/vulcnn/functions.sc /opt/salomon-vulcnn/
+# Copy the CLI and its supporting modules to the container.
+COPY docker/AbstractCli.py docker/vulcnn/cli.py docker/vulcnn/helper_functions.py \
+    docker/vulcnn/metadata.py docker/vulcnn/functions.sc /opt/salomon-vulcnn/
 # Create the workspace and models directories.
 RUN mkdir -p /workspace /models \
     && chmod 1777 /workspace 

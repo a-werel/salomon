@@ -73,10 +73,10 @@ def test_names_follow_source_identity_not_pdg_filename_order(tmp_path):
         {"id": "1", "name": "FUN1", "line": 3, "pdg": "/workspace/run/pdgs/1.dot"},
         {"id": "2", "name": "FUN2", "line": 8, "pdg": "/workspace/run/pdgs/2.dot"},
     ]
-    cli.write_json(tmp_path / "functions.json", original)
-    cli.write_json(tmp_path / "source.json", {"filename": "sample.c"})
+    cli.AbstractCli.write_json(tmp_path / "functions.json", original)
+    cli.AbstractCli.write_json(tmp_path / "source.json", {"filename": "sample.c"})
     with patch.object(cli, "describe_functions", return_value=normalized), patch.object(cli, "canonicalize_pdg"):
-        result = cli.export_pdgs(tmp_path)
+        result = cli.VulCNNCli().export(tmp_path)
     assert [f["name"] for f in result["functions"]] == ["unsafe", "safe"]
     assert result["functions"][0]["pdg"] == "/workspace/run/pdgs/1.dot"
     assert result["functions"][0]["id"] == "100"
@@ -84,12 +84,12 @@ def test_names_follow_source_identity_not_pdg_filename_order(tmp_path):
 
 @pytest.mark.parametrize("normalized", [[], [{"line": 4}, {"line": 8}]])
 def test_changed_function_mapping_does_not_publish_a_manifest(tmp_path, normalized):
-    cli.write_json(tmp_path / "functions.json", [{"line": 3}, {"line": 8}])
+    cli.AbstractCli.write_json(tmp_path / "functions.json", [{"line": 3}, {"line": 8}])
     with (
         patch.object(cli, "describe_functions", return_value=normalized),
         pytest.raises(ValueError, match="safely map"),
     ):
-        cli.export_pdgs(tmp_path)
+        cli.VulCNNCli().export(tmp_path)
     assert not (tmp_path / "result.json").exists()
 
 
